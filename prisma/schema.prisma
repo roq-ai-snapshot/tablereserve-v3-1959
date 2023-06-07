@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model reservation {
+  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customer_id      String       @db.Uuid
+  table_layout_id  String       @db.Uuid
+  reservation_date DateTime     @db.Timestamp(6)
+  reservation_time DateTime     @db.Time(6)
+  special_requests String?      @db.VarChar(255)
+  user             user         @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  table_layout     table_layout @relation(fields: [table_layout_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model restaurant {
+  id                  String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id             String         @db.Uuid
+  name                String         @db.VarChar(255)
+  location            String?        @db.VarChar(255)
+  contact_information String?        @db.VarChar(255)
+  user                user           @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  table_layout        table_layout[]
+  waiter              waiter[]
+}
+
+model table_layout {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  restaurant_id     String              @db.Uuid
+  table_number      Int
+  seating_capacity  Int
+  reservation       reservation[]
+  restaurant        restaurant          @relation(fields: [restaurant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  waiter_assignment waiter_assignment[]
+}
+
+model user {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email       String        @unique @db.VarChar(255)
+  firstName   String?       @db.VarChar(255)
+  lastName    String?       @db.VarChar(255)
+  roq_user_id String        @db.VarChar(255)
+  tenant_id   String        @db.VarChar(255)
+  reservation reservation[]
+  restaurant  restaurant[]
+  waiter      waiter[]
+}
+
+model waiter {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id           String              @db.Uuid
+  restaurant_id     String              @db.Uuid
+  restaurant        restaurant          @relation(fields: [restaurant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user              user                @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  waiter_assignment waiter_assignment[]
+}
+
+model waiter_assignment {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  waiter_id       String       @db.Uuid
+  table_layout_id String       @db.Uuid
+  table_layout    table_layout @relation(fields: [table_layout_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  waiter          waiter       @relation(fields: [waiter_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
